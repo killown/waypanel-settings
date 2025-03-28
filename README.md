@@ -1,0 +1,1 @@
+# waypanel-settings
