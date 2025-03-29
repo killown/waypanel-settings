@@ -19,7 +19,18 @@
                                 </div>
                                 <p class="mb-1">Manage applications in the dockbar</p>
                             </a>
-                            
+
+                            <a href="{{ url_for('panel_settings') if 'menu' in config else '#' }}" 
+                               class="list-group-item list-group-item-action {{ 'disabled' if 'menu' not in config }}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Panel Configuration</h5>
+                                    <span class="badge bg-{{ 'primary' if 'menu' in config else 'secondary' }} rounded-pill">
+                                        {{ config.menu|length if config.menu else 0 }}
+                                    </span>
+                                </div>
+                                <p class="mb-1">Manage Panel Settings</p>
+                            </a>
+
                             <a href="{{ url_for('menu') if 'menu' in config else '#' }}" 
                                class="list-group-item list-group-item-action {{ 'disabled' if 'menu' not in config }}">
                                 <div class="d-flex w-100 justify-content-between">

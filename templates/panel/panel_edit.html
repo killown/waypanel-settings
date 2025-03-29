@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Panel Configuration</h1>
+    
+    <form method="POST">
+        {% for section, settings in panel_config.items() %}
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">[panel.{{ section }}]</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for key, value in settings.items() %}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">{{ key }}</label>
+                            <input type="text" 
+                                   name="{{ section }}.{{ key }}"
+                                   value="{{ value }}"
+                                   class="form-control">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i> Save All Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -117,6 +117,181 @@ def get_menu_items(submenu_data):
 
     return items
 
+
+app = Quart(__name__)
+app.secret_key = 'your-secret-key-here'
+app.config['CONFIG_PATH'] = os.path.expanduser('~/.config/waypanel/waypanel.toml')
+
+# Template filters for type checking
+
+
+@app.template_filter('is_boolean')
+def is_boolean(value):
+    return isinstance(value, bool)
+
+
+@app.template_filter('is_number')
+def is_number(value):
+    return isinstance(value, (int, float))
+
+
+@app.template_filter('is_integer')
+def is_integer(value):
+    return isinstance(value, int)
+
+
+def clean_orphaned_sections(config):
+    PROTECTED_SECTIONS = {
+        'panel', 'menu', 'folders', 'dockbar',
+        'cmd', 'launcher', 'dpms'
+    }
+
+    all_sections = list(config.keys())
+    for section_name in all_sections:
+        if '.' in section_name:
+            prefix = section_name.split('.')[0]
+            if (prefix not in PROTECTED_SECTIONS and not config[section_name]):
+                del config[section_name]
+    return config
+
+
+def load_config():
+    try:
+        with open(app.config['CONFIG_PATH'], 'r') as f:
+            config = toml.load(f)
+            return clean_orphaned_sections(config)
+    except FileNotFoundError:
+        return {
+            'panel': {},
+            'menu': {'icons': {}},
+            'folders': {},
+            'dockbar': {},
+            'cmd': {},
+            'launcher': {}
+        }
+
+
+def save_config(config):
+    if 'menu' in config:
+        config['menu'] = {k: v for k, v in config['menu'].items() if v}
+
+    temp_path = f"{app.config['CONFIG_PATH']}.tmp"
+    with open(temp_path, 'w') as f:
+        toml.dump(config, f)
+    os.replace(temp_path, app.config['CONFIG_PATH'])
+
+
+def get_menu_items(submenu_data):
+    items = []
+    if isinstance(submenu_data, list):
+        items = submenu_data
+    elif isinstance(submenu_data, dict):
+        items = [value for key, value in submenu_data.items()
+                 if key.startswith('item') and isinstance(value, dict)]
+
+    for idx, item in enumerate(items):
+        if '_key' not in item:
+            item['_key'] = f'item_{idx + 1}'
+    items.sort(key=lambda x: int(x['_key'].split('_')[-1]))
+    return items
+
+
+@app.route('/reload_waypanel', methods=['POST'])
+async def reload_waypanel():
+    try:
+        subprocess.Popen('pkill waypanel; waypanel', shell=True)
+        return {'success': True, 'message': 'Waypanel reload initiated'}
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+
+# ======================
+# Panel Settings Routes
+# ======================
+
+
+@app.route('/panel', methods=['GET', 'POST'])
+async def panel_settings():
+    config = load_config()
+    panel_config = config.get('panel', {})
+
+    if request.method == 'POST':
+        # Rebuild the entire panel config from form data
+        new_config = {}
+        form = await request.form
+
+        for key, value in form.items():
+            if key == 'csrf_token':
+                continue
+
+            # Handle nested keys (like "bottom.enabled")
+            parts = key.split('.')
+            current = new_config
+            for part in parts[:-1]:
+                if part not in current:
+                    current[part] = {}
+                current = current[part]
+            current[parts[-1]] = value
+
+        # Preserve the original structure
+        config['panel'] = new_config
+        save_config(config)
+        await flash('Panel settings saved!', 'success')
+        return redirect(url_for('panel_settings'))
+
+    return await render_template('panel/panel_edit.html',
+                                 panel_config=panel_config,
+                                 panel_sections=sorted(panel_config.keys()))
+
+
+def convert_value_type(value):
+    if isinstance(value, str):
+        if value.lower() == 'true':
+            return True
+        elif value.lower() == 'false':
+            return False
+        elif value.isdigit():
+            return int(value)
+        try:
+            return float(value)
+        except ValueError:
+            return value
+    return value
+
+
+@app.route('/panel/add_setting', methods=['GET', 'POST'])
+async def add_panel_setting():
+    if request.method == 'POST':
+        form = await request.form
+        config = load_config()
+
+        setting_name = form['name'].strip()
+        setting_value = form['value'].strip()
+        setting_type = form['type']
+
+        if setting_type == 'boolean':
+            setting_value = setting_value.lower() == 'true'
+        elif setting_type == 'integer':
+            setting_value = int(setting_value)
+        elif setting_type == 'float':
+            setting_value = float(setting_value)
+
+        config.setdefault('panel', {})[setting_name] = setting_value
+        save_config(config)
+        await flash('Setting added!', 'success')
+        return redirect(url_for('panel_settings'))
+
+    return await render_template('panel/add_setting.html')
+
+
+@app.route('/panel/delete_setting/<setting_name>', methods=['POST'])
+async def delete_panel_setting(setting_name):
+    config = load_config()
+    if 'panel' in config and setting_name in config['panel']:
+        del config['panel'][setting_name]
+        save_config(config)
+        await flash(f'Setting "{setting_name}" deleted!', 'success')
+    return redirect(url_for('panel_settings'))
+
 # ======================
 # Dockbar Routes
 # ======================
@@ -184,46 +359,26 @@ async def delete_dockbar_app(app_id):
 async def move_dockbar_app_up(app_name):
     try:
         config = load_config()
-        print(f"\n=== MOVE UP DEBUG START ===")
-        print(f"Attempting to move UP: {app_name}")
-
-        # Get the dockbar dictionary
         dockbar_items = config.get('dockbar', {})
-        print(f"Dockbar items: {list(dockbar_items.keys())}")
 
         if app_name not in dockbar_items:
-            print(f"ERROR: {app_name} not found in dockbar items")
             await flash('Application not found', 'error')
             return redirect(url_for('dockbar'))
 
-        # Convert to list to maintain order
         items_list = list(dockbar_items.items())
         current_index = next(i for i, (k, v) in enumerate(items_list) if k == app_name)
 
-        print(f"Current position: {current_index}")
-
         if current_index <= 0:
-            print("Already at top position")
             await flash('Already at top', 'info')
             return redirect(url_for('dockbar'))
 
-        # Swap positions
         prev_index = current_index - 1
         items_list[current_index], items_list[prev_index] = items_list[prev_index], items_list[current_index]
-
-        # Update the config
         config['dockbar'] = dict(items_list)
-
-        print("New order:")
-        for name in config['dockbar'].keys():
-            print(f"- {name}")
-
         save_config(config)
-        print("=== MOVE UP DEBUG END ===\n")
         await flash(f'Moved {app_name} up', 'success')
 
     except Exception as e:
-        print(f"ERROR: {str(e)}")
         await flash('Error moving application', 'error')
 
     return redirect(url_for('dockbar'))
@@ -233,46 +388,26 @@ async def move_dockbar_app_up(app_name):
 async def move_dockbar_app_down(app_name):
     try:
         config = load_config()
-        print(f"\n=== DEBUG START ===")
-        print(f"Attempting to move DOWN: {app_name}")
-
-        # Get the dockbar dictionary
         dockbar_items = config.get('dockbar', {})
-        print(f"Dockbar items: {list(dockbar_items.keys())}")
 
         if app_name not in dockbar_items:
-            print(f"ERROR: {app_name} not found in dockbar items")
             await flash('Application not found', 'error')
             return redirect(url_for('dockbar'))
 
-        # Convert to list to maintain order
         items_list = list(dockbar_items.items())
         current_index = next(i for i, (k, v) in enumerate(items_list) if k == app_name)
 
-        print(f"Current position: {current_index}")
-
         if current_index >= len(items_list) - 1:
-            print("Already at bottom position")
             await flash('Already at bottom', 'info')
             return redirect(url_for('dockbar'))
 
-        # Swap positions
         next_index = current_index + 1
         items_list[current_index], items_list[next_index] = items_list[next_index], items_list[current_index]
-
-        # Update the config
         config['dockbar'] = dict(items_list)
-
-        print("New order:")
-        for name in config['dockbar'].keys():
-            print(f"- {name}")
-
         save_config(config)
-        print("=== DEBUG END ===\n")
         await flash(f'Moved {app_name} down', 'success')
 
     except Exception as e:
-        print(f"ERROR: {str(e)}")
         await flash('Error moving application', 'error')
 
     return redirect(url_for('dockbar'))
@@ -326,13 +461,10 @@ async def view_submenu(submenu_name):
     config = load_config()
     submenu_data = config.get('menu', {}).get(submenu_name, {})
 
-    # Convert items to a common format
     items = []
     if isinstance(submenu_data, list):
-        # Array-of-tables format
         items = submenu_data
     elif isinstance(submenu_data, dict):
-        # Dictionary format
         items = []
         for key, item in submenu_data.items():
             if key.startswith('item'):
@@ -342,8 +474,6 @@ async def view_submenu(submenu_name):
                         'cmd': item.get('cmd'),
                         'key': key
                     })
-                # Handle case where item might be a list or other type
-                # You might want to add additional handling here if needed
 
     return await render_template('menu/submenu.html',
                                  submenu_name=submenu_name,
@@ -358,20 +488,16 @@ async def add_submenu_item(submenu_name):
         form = await request.form
         new_item = {'name': form['name'], 'cmd': form['cmd']}
 
-        # Initialize menu if not exists
         if 'menu' not in config:
             config['menu'] = {}
         if submenu_name not in config['menu']:
             config['menu'][submenu_name] = {}
 
-        # Find next available item number
         item_num = 1
         while f'item_{item_num}' in config['menu'][submenu_name]:
             item_num += 1
 
-        # Add new item in the correct nested format
         config['menu'][submenu_name][f'item_{item_num}'] = new_item
-
         save_config(config)
         await flash('Item added successfully!', 'success')
         return redirect(url_for('view_submenu', submenu_name=submenu_name))
@@ -394,7 +520,7 @@ async def delete_submenu(submenu_name):
 
 
 @app.route('/menu/submenu/<submenu_name>/edit/<int:item_num>', methods=['GET', 'POST'])
-async def edit_submenu_item(submenu_name, item_num):  # Changed from item_index to item_num
+async def edit_submenu_item(submenu_name, item_num):
     config = load_config()
     item_key = f'item_{item_num}'
     submenu_data = config.get('menu', {}).get(submenu_name, {})
@@ -425,13 +551,9 @@ async def delete_submenu_item(submenu_name, item_num):
     item_key = f'item_{item_num}'
 
     if 'menu' in config and submenu_name in config['menu'] and item_key in config['menu'][submenu_name]:
-        # Get the item name for the flash message
         item_name = config['menu'][submenu_name][item_key].get('name', 'Unnamed item')
-
-        # Delete the item
         del config['menu'][submenu_name][item_key]
 
-        # Clean up empty submenus
         if not config['menu'][submenu_name]:
             del config['menu'][submenu_name]
 
@@ -459,7 +581,6 @@ async def add_submenu():
             return redirect(url_for('view_submenu', submenu_name=submenu_name))
 
     return await render_template('menu/add_submenu.html')
-
 
 # ======================
 # Folders Routes
@@ -546,18 +667,13 @@ class WebViewManager:
         self.server_task = None
         self.window = None
         self.shutdown_event = asyncio.Event()
-
-        # Set up logging
         self.setup_logging()
 
     def setup_logging(self):
-        """Configure logging to show in console"""
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler(sys.stdout)  # Output to console
-            ]
+            handlers=[logging.StreamHandler(sys.stdout)]
         )
         self.logger = logging.getLogger('WebViewManager')
         self.logger.info("Logging initialized")
@@ -568,11 +684,8 @@ class WebViewManager:
             config = Config()
             config.bind = ["127.0.0.1:5001"]
             config.use_reloader = False
-
-            # Enable access logging
-            config.accesslog = "-"  # Log to stdout
-            config.errorlog = "-"   # Log to stdout
-
+            config.accesslog = "-"
+            config.errorlog = "-"
             await serve(self.quart_app, config, shutdown_trigger=self.shutdown_event.wait)
         except Exception as e:
             self.logger.error(f"Server error: {str(e)}")
@@ -584,7 +697,6 @@ class WebViewManager:
             asyncio.set_event_loop(asyncio.new_event_loop())
             loop = asyncio.get_event_loop()
             self.server_task = loop.create_task(self.run_server())
-
             self.logger.info("Starting event loop")
             loop.run_forever()
         except Exception as e:
@@ -596,13 +708,9 @@ class WebViewManager:
 
     def start(self):
         self.logger.info("Starting WebView manager")
-
-        # Start server thread
         t = threading.Thread(target=self.start_server, daemon=True)
         t.start()
         self.logger.debug("Server thread started")
-
-        # Wait for server to start
         time.sleep(1)
 
         try:
@@ -622,7 +730,6 @@ class WebViewManager:
                     self.server_task.cancel()
 
             self.window.events.closed += on_closed
-
             self.logger.info("Starting WebView")
             webview.start()
         except Exception as e:
@@ -631,7 +738,6 @@ class WebViewManager:
 
 
 def main():
-    # Set up root logger
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
 
@@ -652,4 +758,5 @@ def main():
         raise
 
 
-__all__ = ['Config', 'load_config', 'save_config']
+if __name__ == '__main__':
+    main()
