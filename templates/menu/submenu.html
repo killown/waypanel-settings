@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Submenu: {{ submenu_name }}</h1>
+        <a href="{{ url_for('add_submenu_item', submenu_name=submenu_name) }}" class="btn btn-primary">Add Item</a>
+    </div>
+    
+    {% if items %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Command</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td><code>{{ item.cmd }}</code></td>
+                    <td>
+                        <a href="{{ url_for('edit_submenu_item', submenu_name=submenu_name, item_num=item.key.split('_')[1]) }}"
+                           class="btn btn-sm btn-warning">Edit</a>
+                        <form method="POST" 
+                              action="{{ url_for('delete_submenu_item', submenu_name=submenu_name, item_num=item.key.split('_')[1]) }}" 
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" 
+                                    onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No items found in this submenu.
+    </div>
+    {% endif %}
+    
+    <a href="{{ url_for('menu') }}" class="btn btn-secondary">Back to Menu</a>
+</div>
+{% endblock %}

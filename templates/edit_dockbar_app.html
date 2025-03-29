@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Edit Dockbar Application: {{ app_id }}</h1>
+    
+    <form method="POST">
+        <div class="mb-3">
+            <label for="name" class="form-label">Display Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ app.name }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="cmd" class="form-label">Command</label>
+            <input type="text" class="form-control" id="cmd" name="cmd" value="{{ app.cmd }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="icon" class="form-label">Icon Name</label>
+            <input type="text" class="form-control" id="icon" name="icon" value="{{ app.icon }}" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="wclass" class="form-label">Window Class</label>
+            <input type="text" class="form-control" id="wclass" name="wclass" value="{{ app.get('wclass', '') }}">
+        </div>
+        
+        <div class="mb-3">
+            <label for="desktop_file" class="form-label">Desktop File</label>
+            <input type="text" class="form-control" id="desktop_file" name="desktop_file" value="{{ app.get('desktop_file', '') }}">
+        </div>
+        
+        <div class="mb-3">
+            <label for="initial_title" class="form-label">Initial Title</label>
+            <input type="text" class="form-control" id="initial_title" name="initial_title" value="{{ app.get('initial_title', '') }}">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{{ url_for('dockbar') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

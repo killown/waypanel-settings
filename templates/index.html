@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <h1 class="my-4">Waypanel Configuration</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Configuration Sections</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <a href="{{ url_for('dockbar') }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Dockbar Applications</h5>
+                                    <span class="badge bg-primary rounded-pill">{{ config.dockbar|length if config.dockbar else 0 }}</span>
+                                </div>
+                                <p class="mb-1">Manage applications in the dockbar</p>
+                            </a>
+                            
+                            <a href="{{ url_for('menu') if 'menu' in config else '#' }}" 
+                               class="list-group-item list-group-item-action {{ 'disabled' if 'menu' not in config }}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Menu Configuration</h5>
+                                    <span class="badge bg-{{ 'primary' if 'menu' in config else 'secondary' }} rounded-pill">
+                                        {{ config.menu|length if config.menu else 0 }}
+                                    </span>
+                                </div>
+                                <p class="mb-1">Manage menu items and submenus</p>
+                            </a>
+                            
+                            <a href="{{ url_for('folders') if 'folders' in config else '#' }}" 
+                               class="list-group-item list-group-item-action {{ 'disabled' if 'folders' not in config }}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Folder Shortcuts</h5>
+                                    <span class="badge bg-{{ 'primary' if 'folders' in config else 'secondary' }} rounded-pill">
+                                        {{ config.folders|length if config.folders else 0 }}
+                                    </span>
+                                </div>
+                                <p class="mb-1">Manage folder shortcuts</p>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">System Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Config Path:</dt>
+                            <dd class="col-sm-8"><code>{{ config_path }}</code></dd>
+                            
+                            <dt class="col-sm-4">Last Modified:</dt>
+                            <dd class="col-sm-8">{{ last_modified }}</dd>
+                            
+                            <dt class="col-sm-4">Sections:</dt>
+                            <dd class="col-sm-8">
+                                {% for section in config.keys() %}
+                                    <span class="badge bg-secondary">{{ section }}</span>
+                                {% endfor %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

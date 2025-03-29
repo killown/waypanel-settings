@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Add Dockbar Application</h1>
+    
+    <form method="POST">
+        <div class="mb-3">
+            <label for="id" class="form-label">Application ID</label>
+            <input type="text" class="form-control" id="id" name="id" required>
+            <div class="form-text">Unique identifier (e.g., "librewolf")</div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="name" class="form-label">Display Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="cmd" class="form-label">Command</label>
+            <input type="text" class="form-control" id="cmd" name="cmd" required>
+            <div class="form-text">Command to launch the application</div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="icon" class="form-label">Icon Name</label>
+            <input type="text" class="form-control" id="icon" name="icon" required>
+            <div class="form-text">Icon identifier (e.g., "librewolf")</div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="wclass" class="form-label">Window Class (optional)</label>
+            <input type="text" class="form-control" id="wclass" name="wclass">
+        </div>
+        
+        <div class="mb-3">
+            <label for="desktop_file" class="form-label">Desktop File (optional)</label>
+            <input type="text" class="form-control" id="desktop_file" name="desktop_file">
+        </div>
+        
+        <div class="mb-3">
+            <label for="initial_title" class="form-label">Initial Title (optional)</label>
+            <input type="text" class="form-control" id="initial_title" name="initial_title">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{{ url_for('dockbar') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+{% endblock %}

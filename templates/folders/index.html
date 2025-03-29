@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Folder Shortcuts</h1>
+        <a href="{{ url_for('add_folder') }}" class="btn btn-primary">Add Folder</a>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Path</th>
+                    <th>File Manager</th>
+                    <th>Icon</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for folder_id, folder in folders.items() %}
+                <tr>
+                    <td>{{ folder_id }}</td>
+                    <td>{{ folder.name }}</td>
+                    <td><code>{{ folder.path }}</code></td>
+                    <td>{{ folder.filemanager }}</td>
+                    <td>{{ folder.icon }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_folder', folder_id=folder_id) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <form method="POST" action="{{ url_for('delete_folder', folder_id=folder_id) }}" style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

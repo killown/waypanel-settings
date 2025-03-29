@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Add Folder Shortcut</h1>
+    
+    <form method="POST">
+        <div class="mb-3">
+            <label for="id" class="form-label">Folder ID</label>
+            <input type="text" class="form-control" id="id" name="id" required>
+            <div class="form-text">Unique identifier (e.g., "Home", "Downloads")</div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="name" class="form-label">Display Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="path" class="form-label">Path</label>
+            <input type="text" class="form-control" id="path" name="path" required>
+            <div class="form-text">Absolute path or relative to home directory</div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="filemanager" class="form-label">File Manager Command</label>
+            <input type="text" class="form-control" id="filemanager" name="filemanager" required>
+            <div class="form-text">Command to open the file manager (e.g., "nautilus", "thunar")</div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="icon" class="form-label">Icon Name</label>
+            <input type="text" class="form-control" id="icon" name="icon" required>
+            <div class="form-text">Icon identifier (e.g., "folder-home-symbolic")</div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Add Folder</button>
+        <a href="{{ url_for('folders') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

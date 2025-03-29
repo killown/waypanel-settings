@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Edit Menu Icons</h1>
+    
+    <form method="POST">
+        {% for name, icon in menu_icons.items() %}
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="name_{{ loop.index0 }}" value="{{ name }}" placeholder="Menu entry name">
+            </div>
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="icon_{{ loop.index0 }}" value="{{ icon }}" placeholder="Icon name">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger" onclick="this.parentNode.parentNode.remove()">Remove</button>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="new_name" placeholder="New menu entry name">
+            </div>
+            <div class="col-md-5">
+                <input type="text" class="form-control" name="new_icon" placeholder="New icon name">
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{{ url_for('menu') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

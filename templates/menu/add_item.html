@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Add Item to {{ submenu_name }}</h1>
+    
+    <form method="POST">
+        <div class="mb-3">
+            <label for="name" class="form-label">Item Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="cmd" class="form-label">Command</label>
+            <input type="text" class="form-control" id="cmd" name="cmd" required>
+            <div class="form-text">Command to execute when this item is selected</div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Add Item</button>
+        <a href="{{ url_for('view_submenu', submenu_name=submenu_name) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
