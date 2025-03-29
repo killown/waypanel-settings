@@ -62,7 +62,7 @@
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm" role="group">
                                     <!-- Move Up -->
-                                    <form method="POST" action="{{ url_for('move_dockbar_app_up', app_id=app_id) }}">
+                                    <form method="POST" action="{{ url_for('move_dockbar_app_up', app_name=app_id.replace('dockbar.', '')) }}">
                                         <button type="submit" class="btn btn-outline-secondary" 
                                                 {% if loop.first %}disabled{% endif %}
                                                 title="Move up">
@@ -71,13 +71,13 @@
                                     </form>
                                     
                                     <!-- Move Down -->
-                                    <form method="POST" action="{{ url_for('move_dockbar_app_down', app_id=app_id) }}">
-                                        <button type="submit" class="btn btn-outline-secondary" 
-                                                {% if loop.last %}disabled{% endif %}
-                                                title="Move down">
-                                            <i class="fas fa-arrow-down"></i>
-                                        </button>
-                                    </form>
+                                  <form method="POST" action="{{ url_for('move_dockbar_app_down', app_name=app_id.replace('dockbar.', '')) }}">
+                                      <button type="submit" class="btn btn-outline-secondary" 
+                                              {% if loop.last %}disabled{% endif %}
+                                              title="Move down">
+                                          <i class="fas fa-arrow-down"></i>
+                                      </button>
+                                  </form>
                                     
                                     <!-- Edit -->
                                     <a href="{{ url_for('edit_dockbar_app', app_id=app_id) }}" 

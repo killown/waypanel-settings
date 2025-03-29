@@ -1,0 +1,14 @@
+# Core Requirements
+quart==0.18.4
+webview==3.6.2
+tomli==2.0.1  # For TOML config parsing (Python <3.11)
+tomli-w==1.0.0  # For TOML config writing
+
+# Security & Utilities
+python-dotenv==1.0.0  # For environment variables
+bcrypt==4.0.1  # For password hashing (if needed)
+pyopenssl==23.2.0  # For HTTPS (optional)
+
+# Development Extras
+debugpy==1.6.7  # For VS Code debugging
+waitress==2.1.2  # Production WSGI server (optional)
